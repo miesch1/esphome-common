@@ -629,6 +629,123 @@ The parent repository owns:
 
 ---
 
+## Secrets
+
+`esphome-common` does **not** contain credentials or other deployment-specific
+secrets.
+
+Reusable packages may reference ESPHome secrets using `!secret`, for example:
+
+```yaml
+api:
+  encryption:
+    key: !secret api_key
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+```
+
+The corresponding values are provided by the **consuming ESPHome
+installation**, not by this repository.
+
+For a Home Assistant ESPHome installation, these values normally reside in:
+
+    /config/esphome/secrets.yaml
+
+For example:
+
+```yaml
+wifi_ssid: "My WiFi Network"
+wifi_password: "my-wifi-password"
+
+api_key: "base64-api-encryption-key"
+
+web_server_password: "my-web-server-password"
+ap_password: "my-fallback-ap-password"
+```
+
+When a concrete device includes a package from `esphome-common`, ESPHome
+resolves the package's `!secret` references against the consuming
+installation's secrets.
+
+Conceptually:
+
+    Home Assistant / ESPHome
+    │
+    ├── esphome/
+    │   ├── secrets.yaml              <-- actual secret values
+    │   │
+    │   ├── esp-32-solarshed.yaml     <-- concrete device
+    │   │       │
+    │   │       └── includes
+    │   │
+    │   └── common/                   <-- Git submodule
+    │       └── base/
+    │           └── base.yaml
+    │                   │
+    │                   └── !secret wifi_password
+    │
+    └─────────────────────────────────┘
+                  resolved by ESPHome
+
+This separation allows `esphome-common` to remain reusable and safe to publish
+without embedding credentials.
+
+### Do Not Store Secrets in This Repository
+
+Never place actual credentials in `esphome-common`, including:
+
+- Wi-Fi passwords
+- API encryption keys
+- OTA credentials
+- Web server passwords
+- Fallback access-point passwords
+- Tokens
+- Private keys
+- Device-specific credentials
+
+The repository `.gitignore` excludes common secret-file names:
+
+```gitignore
+secrets.yaml
+*.secrets.yaml
+.env
+.env.*
+```
+
+However, `.gitignore` is only a safeguard. Secrets that have already been
+committed to Git remain in repository history even if the file is later added
+to `.gitignore`.
+
+### Example Configurations
+
+Files under `examples/` should also contain **no real secrets**.
+
+Examples should reference secrets using the same `!secret` mechanism used by
+real devices. This allows an example to demonstrate the complete architecture
+without including credentials.
+
+For example:
+
+```yaml
+packages:
+  device_base: !include ../base/base.esp32-devkit-30pin.yaml
+```
+
+The included base may reference:
+
+```yaml
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+```
+
+Those values are intentionally absent from `esphome-common` and are supplied
+by the ESPHome installation consuming the library.
+
+---
+
 ## Updating the Common Configuration
 
 The parent repository records a specific commit of the `esphome-common`
