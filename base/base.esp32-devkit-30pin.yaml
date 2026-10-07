@@ -13,7 +13,7 @@
 
 # Using packages so that switches and other components can be merged ("inherited")
 packages:
-  device_base: !include .base.yaml
+  device_base: !include base.yaml
 
 ################################################################################
 # Substitution Variables. To be overridden by consumers.

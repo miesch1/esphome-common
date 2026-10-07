@@ -170,6 +170,29 @@ esphome:
   project:
     name: $esphome_project_name
     version: $esphome_project_version
+
+  # ---------------------------------------------------------------------------
+  # Device Initialization Hook
+  #
+  # Every concrete device inheriting this base MUST implement a script with
+  # the ID `setup_script`.
+  #
+  # Device-specific initialization belongs in the concrete device rather than
+  # the common base.
+  #
+  # If no initialization is required, explicitly provide a no-op:
+  #
+  #   script:
+  #     - id: setup_script
+  #       then: []
+  #
+  # A diagnostic boot log is also an acceptable minimal implementation.
+  #
+  # ESPHome 2026.9.1 testing confirmed that a common default script cannot be
+  # overridden by a concrete device using the same ID; doing so produces a
+  # duplicate-ID validation error. Therefore no default implementation is
+  # provided here.
+  # ---------------------------------------------------------------------------
   on_boot:
     priority: -100  # Run consumer setup after normal component initialization
     then:
