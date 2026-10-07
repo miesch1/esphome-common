@@ -1,0 +1,60 @@
+################################################################################
+# ESP32 Example Device
+#
+# PURPOSE
+#
+# Demonstrates a minimal concrete ESPHome device using the esphome-common
+# architecture.
+#
+# This example:
+#
+#   - Inherits the generic 30-pin ESP32 board definition.
+#   - Instantiates the shared I2C bus.
+#   - Composes a BME280 environmental sensor.
+#   - Implements the required setup_script lifecycle hook.
+#
+# Copy this file into the consuming ESPHome repository and adjust the include
+# paths, substitutions, and peripherals as required.
+#
+################################################################################
+
+packages:
+  device_base: !include ../base/base.esp32-devkit-30pin.yaml
+  i2c_bus: !include ../buses/i2c.yaml
+  environment_sensor: !include ../peripherals/bme280.yaml
+
+################################################################################
+# Device Configuration
+################################################################################
+
+substitutions:
+  device_internal_name: esp32-example
+  device_internal_id: esp32_example
+  device_friendly_name: ESP32 Example
+
+  # Change to an unused address on the target network.
+  device_ip_address: 192.168.1.100
+
+  device_sampling_time: 30s
+
+  esphome_project_name: esp32.Example
+  esphome_project_version: 1.0.0
+
+################################################################################
+# Required Device Initialization Hook
+#
+# base.yaml requires every concrete device to implement setup_script.
+#
+# A boot log is used here as a minimal implementation.
+#
+# If no initialization behavior is desired, this can instead be:
+#
+# script:
+#   - id: setup_script
+#     then: []
+################################################################################
+
+script:
+  - id: setup_script
+    then:
+      - logger.log: "ESP32 Example ESPHome Boot Process Started"

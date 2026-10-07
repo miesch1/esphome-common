@@ -101,6 +101,9 @@ Repository structure:
     │
     ├── components/
     │
+    ├── examples/
+    │   └── esp32-example.yaml
+    │
     ├── README.md
     ├── LICENSE
     ├── .gitattributes
@@ -180,6 +183,31 @@ Possible future examples include:
 
 Components should remain reusable and should not contain configuration that is
 specific to one deployed device.
+
+---
+
+### `examples/`
+
+Contains complete example concrete-device configurations demonstrating how to
+consume the common library.
+
+Examples are documentation and reference implementations. They are not
+automatically included by the common base.
+
+For example:
+
+    examples/esp32-example.yaml
+
+demonstrates:
+
+- ESP32 board inheritance
+- I2C bus composition
+- BME280 peripheral composition
+- Device substitutions
+- The required `setup_script` lifecycle hook
+
+Because examples reside inside this repository, their relative `!include`
+paths differ from those used by a consuming repository.
 
 ---
 
@@ -371,34 +399,233 @@ script:
 
 ---
 
-## Using This Repository as a Git Submodule
+## Consuming This Library as a Git Submodule
 
-A Home Assistant configuration repository can include this repository at:
+The recommended way to consume `esphome-common` is as a Git submodule inside
+the `esphome/` directory of a Home Assistant configuration repository.
 
-    esphome/common
+This keeps reusable ESPHome infrastructure in its own repository while allowing
+the consuming repository to pin a specific known-good version.
 
-Example:
+### 1. Add the Submodule
+
+From the root of the consuming repository:
 
 ```bash
 git submodule add https://github.com/miesch1/esphome-common.git esphome/common
 ```
 
-The resulting structure is:
+This creates:
 
     hass/
+    ├── .gitmodules
     └── esphome/
-        ├── common/                 <-- esphome-common submodule
-        ├── esp-32-garage.yaml
-        └── esp-32-solarshed.yaml
+        ├── common/
+        │   ├── base/
+        │   ├── buses/
+        │   ├── peripherals/
+        │   ├── components/
+        │   └── examples/
+        │
+        └── esp32-example.yaml
 
-Concrete ESPHome configurations can then include packages using paths such as:
+The parent repository does not store the contents of `esphome-common`.
+Instead, it stores a reference to a specific commit of the submodule.
+
+### 2. Create a Concrete Device
+
+A concrete device configuration in the consuming repository can use the common
+packages through the submodule.
+
+For example:
 
 ```yaml
 packages:
   device_base: !include common/base/base.esp32-devkit-30pin.yaml
   i2c_bus: !include common/buses/i2c.yaml
   environment_sensor: !include common/peripherals/bme280.yaml
+
+substitutions:
+  device_internal_name: esp32-example
+  device_internal_id: esp32_example
+  device_friendly_name: ESP32 Example
+  device_ip_address: 192.168.1.100
+  device_sampling_time: 30s
+  esphome_project_name: esp32.Example
+  esphome_project_version: 1.0.0
+
+script:
+  - id: setup_script
+    then:
+      - logger.log: "ESP32 Example ESPHome Boot Process Started"
 ```
+
+The important distinction is that the include paths are relative to the
+concrete device configuration.
+
+A device located directly under `esphome/` therefore uses:
+
+    common/base/...
+    common/buses/...
+    common/peripherals/...
+
+The example stored inside the `esphome-common` repository itself instead uses
+paths such as:
+
+    ../base/...
+    ../buses/...
+    ../peripherals/...
+
+### 3. Validate the Device
+
+After adding the common packages, validate the concrete ESPHome configuration
+before deploying it.
+
+The base configuration requires every concrete device to implement
+`setup_script`.
+
+If no device-specific initialization is required, use an explicit no-op:
+
+```yaml
+script:
+  - id: setup_script
+    then: []
+```
+
+### 4. Commit the Submodule to the Parent Repository
+
+After adding the submodule and validating the device:
+
+```bash
+git add .gitmodules esphome/common
+git commit -m "Add ESPHome common submodule"
+git push
+```
+
+The parent repository now records the exact `esphome-common` commit that should
+be used.
+
+---
+
+## Cloning a Repository That Uses the Submodule
+
+When cloning the parent repository onto a new system, initialize its submodules
+at the same time:
+
+```bash
+git clone --recurse-submodules <parent-repository-url>
+```
+
+If the parent repository has already been cloned without its submodules, run:
+
+```bash
+git submodule update --init --recursive
+```
+
+This checks out the exact `esphome-common` revision recorded by the parent
+repository.
+
+---
+
+## Updating `esphome-common`
+
+The parent repository remains pinned to its currently recorded common-library
+revision until explicitly updated.
+
+To update the common library:
+
+```bash
+cd esphome/common
+git pull
+```
+
+Validate affected ESPHome devices after pulling the new common configuration.
+
+Then return to the parent repository:
+
+```bash
+cd ../..
+git add esphome/common
+git commit -m "Update ESPHome common submodule"
+git push
+```
+
+The parent commit records the new submodule revision.
+
+---
+
+## Developing `esphome-common` From the Submodule
+
+The submodule is itself a Git repository.
+
+Changes to common configuration should therefore be committed from inside the
+submodule:
+
+```bash
+cd esphome/common
+
+git status
+git add .
+git commit -m "Update ESPHome common configuration"
+git push
+```
+
+Then return to the parent repository:
+
+```bash
+cd ../..
+git status
+```
+
+Git will show the submodule as changed, for example:
+
+    modified: esphome/common (new commits)
+
+This does **not** mean the common files need to be committed again in the
+parent repository. The parent repository only needs to record the new
+submodule commit:
+
+```bash
+git add esphome/common
+git commit -m "Update ESPHome common submodule"
+git push
+```
+
+Other modified files in the parent repository do not need to be staged or
+committed.
+
+---
+
+## Submodule Workflow Summary
+
+The relationship is:
+
+    hass repository
+        |
+        +-- esphome/
+              |
+              +-- esp-32-garage.yaml
+              +-- esp-32-solarshed.yaml
+              |
+              +-- common/ --------------------+
+                    esphome-common repository |
+                                              |
+                    base/                     |
+                    buses/                    |
+                    peripherals/              |
+                    components/               |
+                    examples/                 |
+                                              |
+                    Git commit <-------------+
+
+`esphome-common` owns the reusable configuration.
+
+The parent repository owns:
+
+- Concrete device configurations
+- Device-specific behavior
+- Secrets
+- The particular `esphome-common` revision used by those devices
 
 ---
 
