@@ -1,0 +1,15 @@
+################################################################################
+# PCF8575 16-bit GPIO Expander
+#
+# ESPHome uses the PCF8574 component for both PCF8574 and PCF8575 devices.
+# Setting pcf8575: true configures the component for the 16-bit PCF8575.
+################################################################################
+
+substitutions:
+  pcf8575_address: "0x21"
+
+pcf8574:
+  - id: pcf8575_hub
+    i2c_id: main_i2c
+    address: ${pcf8575_address}
+    pcf8575: true

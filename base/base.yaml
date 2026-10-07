@@ -1,0 +1,349 @@
+# https://simplyexplained.com/blog/how-i-structure-my-esphome-config-files/?form=MG0AV3
+# https://github.com/homeautomatorza/esphome/blob/main/Lets_build_a_room_sensor/Part%200/code.yaml
+################################################################################
+# ESPHome Device Architecture - Base Device
+#
+# DESIGN PHILOSOPHY
+#
+#   "Inheritance for what the device IS. Composition for what the device HAS."
+#
+# This file is the root of the ESPHome device hierarchy. It contains behavior
+# and services that are common to all devices, regardless of their physical
+# board or application.
+#
+#
+# INHERITANCE - WHAT A DEVICE IS
+#
+# Base files describe increasingly specific device/platform characteristics.
+#
+# Example:
+#
+#   .base.yaml
+#       |
+#       +-- .base.esp32-devkit-30pin.yaml
+#               |
+#               +-- esp-32-garage.yaml
+#               +-- esp-32-solarshed.yaml
+#
+#   .base.yaml
+#       Common ESPHome services and behavior.
+#
+#   .base.esp32-devkit-30pin.yaml
+#       Characteristics, capabilities, and defaults of the physical board.
+#
+#   esp-32-solarshed.yaml
+#       The concrete device and its application-specific behavior.
+#
+#
+# COMPOSITION - WHAT A DEVICE HAS
+#
+# Optional hardware and capabilities are added through packages rather than
+# being instantiated by a base class.
+#
+# Shared hardware resources, such as an I2C bus, are composed explicitly ONCE
+# by the concrete device. Peripheral packages reference those resources but do
+# not instantiate them.
+#
+# Example:
+#
+#   esp-32-garage.yaml
+#       HAS-A I2C bus
+#       HAS-A BME280
+#       HAS-A PCA9555
+#       HAS-A PCF8575
+#
+# Conceptually:
+#
+#                         esp-32-garage.yaml
+#                                  |
+#                 +----------------+----------------+
+#                 |                |                |
+#              BME280           PCA9555          PCF8575
+#                 |                |                |
+#                 +----------------+----------------+
+#                                  |
+#                              main_i2c
+#
+# ESPHome packages do not deduplicate repeated component definitions by ID.
+# Therefore, peripheral packages must NOT each include the shared I2C package.
+# Doing so causes main_i2c to be instantiated multiple times and validation
+# fails with a duplicate-ID error.
+#
+# Instead, the concrete device explicitly composes the shared bus once and
+# each peripheral references it using i2c_id: main_i2c.
+#
+#
+# RESOURCE ALLOCATION
+#
+# Base/platform files may describe hardware capabilities and default
+# assignments, but should avoid instantiating optional hardware resources.
+#
+# For example, an ESP32 board base may define:
+#
+#   default_i2c_sda_pin: GPIO21
+#   default_i2c_scl_pin: GPIO22
+#
+# These substitutions describe the board's conventional I2C pins but do NOT
+# instantiate an I2C bus or consume those GPIOs.
+#
+# A concrete device that requires I2C explicitly composes the shared I2C bus:
+#
+#   packages:
+#     i2c_bus: !include packages/buses/i2c.yaml
+#
+# A device that does not require I2C does not compose that package, leaving
+# those GPIOs available for other purposes.
+#
+#
+# RESPONSIBILITY BY LAYER
+#
+#   Base Device (.base.yaml)
+#       - Common ESPHome services and behavior.
+#       - No board-specific or application-specific hardware.
+#
+#   Board Base (.base.<board>.yaml)
+#       - Physical board characteristics and capabilities.
+#       - Default hardware assignments.
+#       - Does not allocate optional shared resources.
+#
+#   Shared Resource Package (packages/buses/*.yaml)
+#       - Instantiates a shared hardware resource such as main_i2c.
+#       - Composed exactly once by a concrete device when required.
+#
+#   Peripheral Package (packages/peripherals/*.yaml)
+#       - Owns configuration specific to that peripheral.
+#       - References required shared resources.
+#       - Does not instantiate shared resources.
+#       - Does not assign application-specific meaning to peripheral pins.
+#
+#   Concrete Device (esp-*.yaml)
+#       - Inherits the appropriate board base.
+#       - Composes the shared resources it requires.
+#       - Composes the peripherals it physically has.
+#       - Defines application-specific behavior and pin usage.
+#
+#
+# GOALS
+#
+#   - Keep concrete device YAML focused on what makes that device unique.
+#   - Centralize behavior genuinely common to all devices.
+#   - Keep board-specific knowledge in board-specific base files.
+#   - Encapsulate reusable hardware in peripheral packages.
+#   - Keep peripheral-specific configuration inside the peripheral package.
+#   - Compose shared resources once at the concrete-device level.
+#   - Have peripheral packages reference, but not instantiate, shared resources.
+#   - Allocate optional hardware resources only when actually needed.
+#   - Avoid hidden ownership of shared resources by arbitrary peripherals.
+#   - Allow new boards, peripherals, and devices without duplicating common
+#     configuration or unnecessarily coupling unrelated components.
+#
+################################################################################
+
+################################################################################
+# Substitution Variables. To be overridden by consumers.
+################################################################################
+substitutions:
+  device_internal_name: esp-device # No underscores
+  device_internal_id: esp_device # No hyphens
+  device_friendly_name: ESP-Device
+  device_ip_address: 192.168.0.100
+  device_sampling_time: 30s
+  esphome_project_name: esp.HomeDevice
+  esphome_project_version: 1.0.0.1
+
+################################################################################
+# Globals
+################################################################################
+globals: #to set default reboot behavior
+  - id: wifi_connection
+    type: bool
+    restore_value: no
+    initial_value: "false"
+
+################################################################################
+# Entry Point
+################################################################################
+esphome:
+  name: $device_internal_name
+  friendly_name: $device_friendly_name
+  compile_process_limit: 1 # Was getting a compile error (Killed signal terminated program cc1plus). Gave Docker more RAM.
+  project:
+    name: $esphome_project_name
+    version: $esphome_project_version
+  on_boot:
+    priority: -100  # Run consumer setup after normal component initialization
+    then:
+      - script.execute: setup_script # Must be defined by consumer.
+
+################################################################################
+# Enable logging
+################################################################################
+logger: # Default is DEBUG or higher
+
+################################################################################
+# Enable Home Assistant API
+################################################################################
+api:
+  reboot_timeout: 0s # Try to get connection ASAP
+  encryption:
+    key: !secret api_key
+
+################################################################################
+# OTA
+################################################################################
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+################################################################################
+# Recover from repeated boot failures/reboot loops
+################################################################################
+safe_mode:
+
+################################################################################
+# WiFi
+################################################################################
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  manual_ip:
+    static_ip: $device_ip_address
+    gateway: !secret gateway_address
+    subnet: !secret subnet_mask
+  ap:
+    ssid: $device_internal_name
+    password: !secret ap_password
+
+# Enable fallback hotspot (captive portal) in case wifi connection fails
+captive_portal:
+
+################################################################################
+# Web Server (not supported on pico?)
+################################################################################
+web_server:
+  port: 80
+  version: 2
+  include_internal: true
+  auth:
+    username: !secret web_server_user
+    password: !secret web_server_password
+  local: true # puts js onto device
+
+################################################################################
+# Time
+################################################################################
+time:
+  - platform: homeassistant # Get time from HA
+
+################################################################################
+# Binary Sensors
+################################################################################
+binary_sensor:
+  # ESP Status
+  - platform: status # Determine if device is up
+    name: "Status"
+    id: ${device_internal_id}_status
+
+################################################################################
+# Sensors
+################################################################################
+sensor:
+  #-----------------------------------------------------------------------------
+  # ESP Generic Sensors
+  #-----------------------------------------------------------------------------
+  
+  # WiFi
+  - platform: wifi_signal # Troubleshooting WiFi strength
+    name: "WiFi Signal Sensor"
+    id: ${device_internal_id}_wifi_signal_sensor
+    update_interval: ${device_sampling_time}
+
+  # Uptime
+  - platform: uptime # Convert it to human readable time
+    name: "Uptime Sensor"
+    id: ${device_internal_id}_uptime_sensor
+    update_interval: ${device_sampling_time}
+    internal: true
+    on_raw_value:
+      then:
+        - text_sensor.template.publish:
+            id: ${device_internal_id}_uptime_human
+            state: !lambda |-
+              int seconds = round(id(${device_internal_id}_uptime_sensor).get_raw_state());
+              int days = seconds / (24 * 3600);
+              seconds = seconds % (24 * 3600);
+              int hours = seconds / 3600;
+              seconds = seconds % 3600;
+              int minutes = seconds /  60;
+              seconds = seconds % 60;
+              return (
+                (days ? to_string(days) + "d " : "") +
+                (hours ? to_string(hours) + "h " : "") +
+                (minutes ? to_string(minutes) + "m " : "") +
+                (to_string(seconds) + "s")
+              ).c_str();
+    
+################################################################################
+# Text Sensors
+################################################################################
+text_sensor:
+  #-------------------------------------------------------------------------------
+  # ESP32 internal sensors
+  #-------------------------------------------------------------------------------
+  - platform: wifi_info
+    ip_address:
+      name: IP Address
+      id: ${device_internal_id}_ip_address
+    ssid:
+      name: Connected SSID
+      id: ${device_internal_id}_connected_ssid
+    mac_address:
+      name: Mac Wifi Address
+      id: ${device_internal_id}_mac_address
+
+  - platform: version
+    name: "ESPHome Version"
+    hide_timestamp: true
+
+  #-------------------------------------------------------------------------------
+  # Custom Text sensors
+  #-------------------------------------------------------------------------------
+  - platform: template
+    name: Uptime Human Readable
+    id: ${device_internal_id}_uptime_human
+    icon: mdi:clock-start
+  
+  - platform: template # Expose the program version as a sensor
+    id: project_version
+    icon: "mdi:developer-board"
+    name: $device_internal_name Program Version
+    lambda: |-
+      return std::string("${esphome_project_version}");
+
+################################################################################
+# Switch
+################################################################################
+switch:
+  - platform: restart
+    name: "Restart"
+    id: device_restart
+  
+  - platform: safe_mode
+    name: Use Safe Mode
+    id: device_safe_mode
+
+################################################################################
+# Interval
+################################################################################
+interval:
+  - interval: 10s
+    then:
+      - if:
+          condition:
+            wifi.connected:
+          then:
+            - lambda: |-
+                id(wifi_connection) = true;
+          else:
+            - lambda: |-
+                id(wifi_connection) = false;

@@ -1,0 +1,14 @@
+################################################################################
+# PCA9555 16-bit GPIO Expander
+#
+# ESPHome does not provide a dedicated PCA9555 component. The compatible
+# TCA9555 component is used to communicate with the PCA9555 hardware.
+################################################################################
+
+substitutions:
+  pca9555_address: "0x20"
+
+tca9555:
+  - id: pca9555_hub
+    i2c_id: main_i2c
+    address: ${pca9555_address}

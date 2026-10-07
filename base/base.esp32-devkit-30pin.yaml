@@ -1,0 +1,50 @@
+# https://simplyexplained.com/blog/how-i-structure-my-esphome-config-files/?form=MG0AV3
+# https://github.com/homeautomatorza/esphome/blob/main/Lets_build_a_room_sensor/Part%200/code.yaml
+################################################################################
+# Generic ESP32 Development Board - 30 Pin
+#
+# MCU: Classic ESP32
+# USB UART: CH340/CH9102 depending on board revision
+#
+# ESPHome:
+#   Generic ESP32 Board
+#   definitions/boards/generic-esp32/manifest.yaml
+################################################################################
+
+# Using packages so that switches and other components can be merged ("inherited")
+packages:
+  device_base: !include .base.yaml
+
+################################################################################
+# Substitution Variables. To be overridden by consumers.
+################################################################################
+substitutions:
+  device_internal_name: esp-32-device
+  device_internal_id: esp_32_device
+  device_friendly_name: ESP-32_Device
+  device_ip_address: 192.168.0.101
+  device_sampling_time: 30s
+  esphome_project_name: esp32.HomeDevice
+  esphome_project_version: 1.0.0.1
+
+  # Default hardware capabilities.
+  # These DO NOT instantiate an I2C bus or reserve these GPIOs.
+  default_i2c_sda_pin: GPIO21
+  default_i2c_scl_pin: GPIO22
+
+################################################################################
+# Board Configuration
+################################################################################
+esp32:
+  variant: esp32
+  framework:
+    type: esp-idf
+
+################################################################################
+# Status led
+################################################################################
+status_led:
+  pin:
+    number: GPIO2
+    ignore_strapping_warning: true
+    inverted: false

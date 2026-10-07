@@ -1,0 +1,13 @@
+################################################################################
+# Standard I2C Bus
+#
+# Board base must provide:
+#   default_i2c_sda_pin
+#   default_i2c_scl_pin
+################################################################################
+
+i2c:
+  - id: main_i2c
+    sda: ${default_i2c_sda_pin}
+    scl: ${default_i2c_scl_pin}
+    scan: true

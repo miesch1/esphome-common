@@ -1,0 +1,13 @@
+# Normalize text files to LF in the repository and working tree
+* text=auto eol=lf
+
+# ESPHome / configuration files
+*.yaml text eol=lf
+*.yml  text eol=lf
+
+# Documentation and Git configuration
+*.md text eol=lf
+*.txt text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+LICENSE text eol=lf

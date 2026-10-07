@@ -1,0 +1,101 @@
+################################################################################
+# Default Device Setup Script
+#
+# PURPOSE
+#
+# Provides the default implementation of the `setup_script` initialization
+# hook used by the ESPHome common device architecture.
+#
+# The common base configuration calls `setup_script` during `esphome.on_boot`
+# after normal component initialization:
+#
+#   esphome:
+#     on_boot:
+#       priority: -100
+#       then:
+#         - script.execute: setup_script
+#
+# This allows the base configuration to define a common initialization
+# lifecycle while concrete devices can provide device-specific initialization
+# behavior when required.
+#
+#
+# DESIGN PHILOSOPHY
+#
+#   "Inheritance for what the device IS. Composition for what the device HAS."
+#
+# The setup script acts similarly to a virtual initialization method in an
+# object-oriented design:
+#
+#   Base Device
+#       |
+#       +-- setup_script()
+#               |
+#               +-- default: no operation
+#               |
+#               +-- concrete device implementation
+#
+# A device that requires no application-specific initialization should be able
+# to use this default implementation without defining its own setup script.
+#
+#
+# DEFAULT BEHAVIOR
+#
+# This implementation intentionally performs NO actions.
+#
+# Do not add logging, delays, hardware initialization, or other behavior here
+# unless that behavior is genuinely required by every device using the common
+# architecture.
+#
+# Keeping the default implementation empty ensures that merely inheriting the
+# common base does not introduce unnecessary runtime behavior.
+#
+#
+# CONCRETE DEVICE IMPLEMENTATION
+#
+# Devices requiring initialization may provide their own `setup_script`.
+#
+# Example:
+#
+#   script:
+#     - id: setup_script
+#       then:
+#         - logger.log: "Garage ESPHome Boot Process Started"
+#         - text_sensor.template.publish:
+#             id: valve_status
+#             state: "Idle"
+#         - sprinkler.set_multiplier:
+#             id: irrigation_controller
+#             multiplier: 60
+#
+#
+# IMPORTANT - ESPHOME PACKAGE MERGING
+#
+# ESPHome package configuration is merged into the final device configuration.
+# Before relying on a concrete device definition of `setup_script` to replace
+# this default implementation, verify that the ESPHome version in use permits
+# the same script ID to override the packaged definition rather than producing
+# a duplicate-ID error or merging the script definitions unexpectedly.
+#
+# Until that behavior has been validated, this file should be considered the
+# proposed default implementation of the initialization hook.
+#
+#
+# RESPONSIBILITY
+#
+# This file:
+#
+#   - Provides a safe default implementation of `setup_script`.
+#   - Contains no device-specific behavior.
+#   - Contains no board-specific behavior.
+#   - Allocates no hardware resources.
+#   - Has no side effects.
+#
+# Device-specific initialization belongs in the concrete device configuration,
+# not in this file.
+#
+################################################################################
+
+script:
+  - id: setup_script
+    then: []

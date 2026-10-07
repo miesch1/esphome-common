@@ -1,0 +1,48 @@
+################################################################################
+# BME280 Environmental Sensor
+################################################################################
+
+substitutions:
+  bme280_address: "0x76"
+
+sensor:
+  - platform: bme280_i2c
+    i2c_id: main_i2c
+    address: ${bme280_address}
+    update_interval: ${device_sampling_time}
+
+    temperature:
+      name: "BME280 Temperature (C)"
+      id: bme280_temperature_c
+      internal: true
+
+    pressure:
+      name: "BME280 Pressure (hPa)"
+      id: bme280_pressure_hpa
+      internal: true
+
+    humidity:
+      name: "BME280 Humidity"
+      id: bme280_humidity
+
+  - platform: template
+    name: "BME280 Temperature"
+    id: bme280_temperature
+    unit_of_measurement: "°F"
+    device_class: temperature
+    state_class: measurement
+    accuracy_decimals: 1
+    update_interval: ${device_sampling_time}
+    lambda: |-
+      return (id(bme280_temperature_c).state * 1.8) + 32.0;
+
+  - platform: template
+    name: "BME280 Pressure"
+    id: bme280_pressure
+    unit_of_measurement: "inHg"
+    device_class: pressure
+    state_class: measurement
+    accuracy_decimals: 2
+    update_interval: ${device_sampling_time}
+    lambda: |-
+      return id(bme280_pressure_hpa).state * 0.02953;
