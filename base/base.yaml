@@ -1,5 +1,3 @@
-# https://simplyexplained.com/blog/how-i-structure-my-esphome-config-files/?form=MG0AV3
-# https://github.com/homeautomatorza/esphome/blob/main/Lets_build_a_room_sensor/Part%200/code.yaml
 ################################################################################
 # ESPHome Device Architecture - Base Device
 #
@@ -18,17 +16,17 @@
 #
 # Example:
 #
-#   .base.yaml
+#   base/base.yaml
 #       |
-#       +-- .base.esp32-devkit-30pin.yaml
+#       +-- base/base.esp32-devkit-30pin.yaml
 #               |
 #               +-- esp-32-garage.yaml
 #               +-- esp-32-solarshed.yaml
 #
-#   .base.yaml
+#   base/base.yaml
 #       Common ESPHome services and behavior.
 #
-#   .base.esp32-devkit-30pin.yaml
+#   base/base.esp32-devkit-30pin.yaml
 #       Characteristics, capabilities, and defaults of the physical board.
 #
 #   esp-32-solarshed.yaml
@@ -89,7 +87,7 @@
 # A concrete device that requires I2C explicitly composes the shared I2C bus:
 #
 #   packages:
-#     i2c_bus: !include packages/buses/i2c.yaml
+#     i2c_bus: !include buses/i2c.yaml
 #
 # A device that does not require I2C does not compose that package, leaving
 # those GPIOs available for other purposes.
@@ -97,20 +95,20 @@
 #
 # RESPONSIBILITY BY LAYER
 #
-#   Base Device (.base.yaml)
+#   Base Device (base/base.yaml)
 #       - Common ESPHome services and behavior.
 #       - No board-specific or application-specific hardware.
 #
-#   Board Base (.base.<board>.yaml)
+#   Board Base (base/base.<board>.yaml)
 #       - Physical board characteristics and capabilities.
 #       - Default hardware assignments.
 #       - Does not allocate optional shared resources.
 #
-#   Shared Resource Package (packages/buses/*.yaml)
+#   Shared Resource Package (buses/*.yaml)
 #       - Instantiates a shared hardware resource such as main_i2c.
 #       - Composed exactly once by a concrete device when required.
 #
-#   Peripheral Package (packages/peripherals/*.yaml)
+#   Peripheral Package (peripherals/*.yaml)
 #       - Owns configuration specific to that peripheral.
 #       - References required shared resources.
 #       - Does not instantiate shared resources.

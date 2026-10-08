@@ -6,6 +6,31 @@ components used by my ESPHome devices.
 This repository is intended to be included as a Git submodule in repositories
 containing concrete ESPHome device configurations.
 
+## Background
+
+I started this library because I was tired of updating the same settings and
+behavior across so many ESPHome YAML files. I wanted a more object-oriented
+approach: inheritance for the common behavior and board characteristics a
+device builds on, and composition for the buses and peripherals it actually
+uses.
+
+I found inspiration in these two examples and built on their ideas:
+
+- [How I structure my ESPHome configuration files](https://simplyexplained.com/blog/how-i-structure-my-esphome-config-files/?form=MG0AV3)
+- [Let's build a room sensor — Part 0 configuration](https://github.com/homeautomatorza/esphome/blob/main/Lets_build_a_room_sensor/Part%200/code.yaml)
+
+As I developed the library, I refined that approach around the limitations of
+ESPHome's package merging, validation, and build process. I use inheritance and
+composition as organizing ideas, while keeping resource ownership and lifecycle
+hooks explicit: each concrete device composes its shared buses once and provides
+its own `setup_script` implementation. This avoids relying on repeated component
+IDs to behave like object-oriented overrides or automatically deduplicate shared
+resources.
+
+My goal is to keep common changes in one place, make each device's configuration
+easier to follow, and work within the ESPHome builder's constraints as the
+library grows.
+
 ## Design Philosophy
 
 > **Inheritance for what the device IS. Composition for what the device HAS.**
@@ -743,32 +768,6 @@ wifi:
 
 Those values are intentionally absent from `esphome-common` and are supplied
 by the ESPHome installation consuming the library.
-
----
-
-## Updating the Common Configuration
-
-The parent repository records a specific commit of the `esphome-common`
-submodule.
-
-To update the common repository:
-
-```bash
-cd esphome/common
-git pull
-```
-
-After testing the updated configuration, return to the parent repository and
-commit the new submodule revision:
-
-```bash
-cd ../..
-git add esphome/common
-git commit -m "Update ESPHome common configuration"
-```
-
-This allows deployed devices to remain pinned to a known-good revision of the
-common configuration.
 
 ---
 
