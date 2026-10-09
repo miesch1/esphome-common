@@ -48,7 +48,7 @@ Example:
 
     base/base.yaml
         |
-        +-- base/base.esp32-devkit-30pin.yaml
+        +-- base/base.esp32-wroom-30pin.yaml
                 |
                 +-- esp-32-garage.yaml
                 +-- esp-32-solarshed.yaml
@@ -71,10 +71,15 @@ Examples include:
 
 The generic base should not allocate optional hardware resources.
 
-### `base/base.esp32-devkit-30pin.yaml`
+### `base/base.esp32-wroom-30pin.yaml`
 
-Defines characteristics and defaults for a generic 30-pin ESP32 development
+Defines characteristics and defaults for a 30-pin ESP32-WROOM development
 board.
+
+The name identifies the WROOM module family and the board's 30-pin layout.
+ESP32-WROOM identifies the module, while the carrier board determines which
+pins and onboard features are exposed. A 38-pin board can use the same module
+family while requiring a separate board package.
 
 It inherits `base.yaml` and provides board-specific configuration such as:
 
@@ -114,7 +119,7 @@ Repository structure:
     esphome-common/
     ├── base/
     │   ├── base.yaml
-    │   └── base.esp32-devkit-30pin.yaml
+    │   └── base.esp32-wroom-30pin.yaml
     │
     ├── buses/
     │   └── i2c.yaml
@@ -264,7 +269,7 @@ Instead, the concrete device explicitly composes the shared bus once:
 
 ```yaml
 packages:
-  device_base: !include common/base/base.esp32-devkit-30pin.yaml
+  device_base: !include common/base/base.esp32-wroom-30pin.yaml
 
   i2c_bus: !include common/buses/i2c.yaml
   environment_sensor: !include common/peripherals/bme280.yaml
@@ -403,7 +408,7 @@ A simple environmental sensor device might contain:
 
 ```yaml
 packages:
-  device_base: !include common/base/base.esp32-devkit-30pin.yaml
+  device_base: !include common/base/base.esp32-wroom-30pin.yaml
   i2c_bus: !include common/buses/i2c.yaml
   environment_sensor: !include common/peripherals/bme280.yaml
 
@@ -466,7 +471,7 @@ For example:
 
 ```yaml
 packages:
-  device_base: !include common/base/base.esp32-devkit-30pin.yaml
+  device_base: !include common/base/base.esp32-wroom-30pin.yaml
   i2c_bus: !include common/buses/i2c.yaml
   environment_sensor: !include common/peripherals/bme280.yaml
 
@@ -755,7 +760,7 @@ For example:
 
 ```yaml
 packages:
-  device_base: !include ../base/base.esp32-devkit-30pin.yaml
+  device_base: !include ../base/base.esp32-wroom-30pin.yaml
 ```
 
 The included base may reference:

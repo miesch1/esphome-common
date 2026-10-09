@@ -1,5 +1,5 @@
 ################################################################################
-# Generic ESP32 Development Board - 30 Pin
+# ESP32-WROOM Development Board - 30 Pin
 #
 # MCU: Classic ESP32
 # USB UART: CH340/CH9102 depending on board revision

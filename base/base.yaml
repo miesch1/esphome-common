@@ -18,7 +18,7 @@
 #
 #   base/base.yaml
 #       |
-#       +-- base/base.esp32-devkit-30pin.yaml
+#       +-- base/base.esp32-wroom-30pin.yaml
 #               |
 #               +-- esp-32-garage.yaml
 #               +-- esp-32-solarshed.yaml
@@ -26,7 +26,7 @@
 #   base/base.yaml
 #       Common ESPHome services and behavior.
 #
-#   base/base.esp32-devkit-30pin.yaml
+#   base/base.esp32-wroom-30pin.yaml
 #       Characteristics, capabilities, and defaults of the physical board.
 #
 #   esp-32-solarshed.yaml

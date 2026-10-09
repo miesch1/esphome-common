@@ -19,7 +19,7 @@
 ################################################################################
 
 packages:
-  device_base: !include ../base/base.esp32-devkit-30pin.yaml
+  device_base: !include ../base/base.esp32-wroom-30pin.yaml
   i2c_bus: !include ../buses/i2c.yaml
   environment_sensor: !include ../peripherals/bme280.yaml
 
