@@ -17,8 +17,8 @@ packages:
 # Substitution Variables. To be overridden by consumers.
 ################################################################################
 substitutions:
-  device_internal_name: esp-32-device
-  device_internal_id: esp_32_device
+  device_internal_name: esp-32-device # No underscores
+  device_internal_id: esp_32_device # No hyphens
   device_friendly_name: ESP-32_Device
   device_ip_address: 192.168.0.101
   device_sampling_time: 30s
