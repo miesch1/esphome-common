@@ -214,7 +214,7 @@ api:
 ################################################################################
 ota:
   - platform: esphome
-    password: !secret ota_password
+    encryption: # Reuses api.encryption.key; requires ESPHome 2026.9.0+
 
 ################################################################################
 # Recover from repeated boot failures/reboot loops

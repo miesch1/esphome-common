@@ -776,6 +776,27 @@ by the ESPHome installation consuming the library.
 
 ---
 
+## OTA Encryption
+
+The common base requires encrypted ESPHome OTA updates and reuses the consuming
+installation's `api_key` secret. ESPHome 2026.9.0 or newer is required.
+
+Before adopting this configuration on an existing device, install firmware built
+with ESPHome 2026.9.0 or newer that has API encryption enabled. Keep the existing
+OTA password for that initial upgrade. Confirm its OTA log says
+`Encryption: offered, plaintext accepted`, then update to the encrypted common
+base. After installation, confirm the OTA log says `Encryption: required`.
+
+The `ota_password` secret is no longer used by the common base. Remove any
+additional ESPHome OTA password declarations in consuming packages or device
+files, because OTA password authentication cannot be combined with required
+encryption.
+
+Encryption applies to the `esphome` OTA platform. A separately enabled
+`web_server` OTA platform remains a separate, unencrypted upload path.
+
+---
+
 ## Goals
 
 This repository is intended to:
