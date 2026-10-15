@@ -246,9 +246,11 @@ web_server:
   version: 2
   include_internal: true
   auth:
+    type: digest
     username: !secret web_server_user
     password: !secret web_server_password
   local: true # puts js onto device
+  ota: false
 
 ################################################################################
 # Time
