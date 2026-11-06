@@ -23,7 +23,7 @@ substitutions:
   device_ip_address: 192.168.0.101
   device_sampling_time: 30s
   esphome_project_name: esp32.HomeDevice
-  esphome_project_version: 1.0.0.1
+  # esphome_project_version is inherited from base.yaml. Or override it here.
 
   # Default hardware capabilities.
   # These DO NOT instantiate an I2C bus or reserve these GPIOs.

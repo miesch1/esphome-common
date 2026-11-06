@@ -661,118 +661,85 @@ The parent repository owns:
 
 ## Secrets
 
-`esphome-common` does **not** contain credentials or other deployment-specific
-secrets.
+Start with [secrets.example.yaml](secrets.example.yaml). It lists every secret
+required by the shared base, with comments explaining each field. All values
+are placeholders; replace them before use.
 
-Reusable packages may reference ESPHome secrets using `!secret`, for example:
+Copy the template **beside the concrete device YAML**, not inside the common
+submodule. For a consumer using `esphome/common`, run from its repository root:
 
-```yaml
-api:
-  encryption:
-    key: !secret api_key
-
-wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
+```powershell
+# Run only when esphome/secrets.yaml does not already exist.
+Copy-Item ./esphome/common/secrets.example.yaml ./esphome/secrets.yaml
 ```
 
-The corresponding values are provided by the **consuming ESPHome
-installation**, not by this repository.
+If you already have `secrets.yaml`, add only missing fields to that file rather
+than overwriting existing credentials. When using the example in this repository,
+place its secrets file at `examples/secrets.yaml`.
 
-For a Home Assistant ESPHome installation, these values normally reside in:
-
-    /config/esphome/secrets.yaml
-
-For example:
-
-```yaml
-wifi_ssid: "My WiFi Network"
-wifi_password: "my-wifi-password"
-
-api_key: "base64-api-encryption-key"
-
-web_server_password: "my-web-server-password"
-ap_password: "my-fallback-ap-password"
-```
-
-When a concrete device includes a package from `esphome-common`, ESPHome
-resolves the package's `!secret` references against the consuming
-installation's secrets.
-
-Conceptually:
-
-    Home Assistant / ESPHome
-    │
-    ├── esphome/
-    │   ├── secrets.yaml              <-- actual secret values
-    │   │
-    │   ├── esp-32-solarshed.yaml     <-- concrete device
-    │   │       │
-    │   │       └── includes
-    │   │
-    │   └── common/                   <-- Git submodule
-    │       └── base/
-    │           └── base.yaml
-    │                   │
-    │                   └── !secret wifi_password
-    │
-    └─────────────────────────────────┘
-                  resolved by ESPHome
-
-This separation allows `esphome-common` to remain reusable and safe to publish
-without embedding credentials.
-
-### Do Not Store Secrets in This Repository
-
-Never place actual credentials in `esphome-common`, including:
-
-- Wi-Fi passwords
-- API encryption keys
-- OTA credentials
-- Web server passwords
-- Fallback access-point passwords
-- Tokens
-- Private keys
-- Device-specific credentials
-
-The repository `.gitignore` excludes common secret-file names:
+Add these rules to the **consuming repository's** `.gitignore`:
 
 ```gitignore
 secrets.yaml
 *.secrets.yaml
-.env
-.env.*
 ```
 
-However, `.gitignore` is only a safeguard. Secrets that have already been
-committed to Git remain in repository history even if the file is later added
-to `.gitignore`.
+The common submodule's ignore rules do not protect files outside the submodule.
+Git ignores untracked files; adding a tracked file to `.gitignore` does not stop
+Git tracking its edits. That is why the published template has a different name.
+Avoid force-adding the real secrets file.
 
-### Example Configurations
+### Generate the API key
 
-Files under `examples/` should also contain **no real secrets**.
+The API encryption key must encode 32 random bytes in base64. Generate one with
+Python:
 
-Examples should reference secrets using the same `!secret` mechanism used by
-real devices. This allows an example to demonstrate the complete architecture
-without including credentials.
-
-For example:
-
-```yaml
-packages:
-  device_base: !include ../base/base.esp32-wroom-30pin.yaml
+```shell
+python -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(32)).decode())"
 ```
 
-The included base may reference:
+With ESPHome Device Builder's bundled Python on Windows PowerShell:
 
-```yaml
-wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
+```powershell
+& "$env:LOCALAPPDATA\io.esphome.builder\python\python.exe" -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(32)).decode())"
 ```
 
-Those values are intentionally absent from `esphome-common` and are supplied
-by the ESPHome installation consuming the library.
+Paste the result as the quoted `api_key` value. Home Assistant uses this key to
+connect to the device, and this common base reuses it for encrypted OTA uploads.
+Keep the existing key when updating an installed device unless intentionally
+rotating credentials. Do not generate a new key for every build.
+
+The fallback AP password protects the ESP's recovery hotspot. The web username
+and password protect its local web interface. These serve different purposes
+from your home Wi-Fi credentials. Use a literal web username such as `esp-admin`.
+
+See the [ESPHome API documentation](https://esphome.io/components/api/) for key
+requirements and the [secrets guide](https://esphome.io/guides/faq/#tips-for-using-esphome)
+for configuration details.
+
+---
+
+## Versions and Releases
+
+`base/base.yaml` defines the shared default `esphome_project_version`. Board
+packages inherit it without repeating it. Changing the root default therefore
+flows through every inheritance layer that does not explicitly override it.
+
+Concrete devices can override `esphome_project_version` to identify their own
+firmware releases. The included example demonstrates that override. ESPHome's
+project version and the Program Version sensor then show the device version,
+not the common-library version.
+
+Use a Git tag and GitHub release on this repository to identify a common-library
+release independently of device firmware versions. Match the tag to the root
+version, prefixed with `v`, and record the tested common commit in each consumer's
+submodule. Updating this repository alone does not update consumer submodule pins
+or installed firmware.
+
+The existing four-part version format is retained. It works as an ESPHome version
+string; tools requiring Semantic Versioning expect three numeric components.
+Do not duplicate the root version in board packages or maintain commented-out
+version values, which can become stale.
 
 ---
 

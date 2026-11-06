@@ -147,7 +147,8 @@ substitutions:
   device_ip_address: 192.168.0.100
   device_sampling_time: 30s
   esphome_project_name: esp.HomeDevice
-  esphome_project_version: 1.0.0.1
+  # Shared default; board packages inherit it and devices may override it.
+  esphome_project_version: "1.0.0.2"
 
 ################################################################################
 # Globals
